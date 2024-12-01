@@ -1,3 +1,4 @@
+use core::slice::Iter;
 use std::{collections::HashMap, io};
 
 fn main() -> io::Result<()> {
@@ -14,24 +15,18 @@ fn main() -> io::Result<()> {
         }
     }
 
-    let score = similarity_score(a, b);
+    let score = similarity_score(a.iter(), b.iter());
     println!("{score}");
     Ok(())
 }
 
-fn similarity_score(a: Vec<i32>, b: Vec<i32>) -> i32 {
-    let mut b_freq: HashMap<i32, i32> = HashMap::new();
-    for val in b.iter() {
-        if let Some(count) = b_freq.get(val) {
-            b_freq.insert(*val, count + 1);
-        } else {
-            b_freq.insert(*val, 1);
-        }
-    }
+fn similarity_score(a: Iter<i32>, b: Iter<i32>) -> i32 {
+    let b_freq = b.fold(HashMap::new(), |mut acc, val| {
+        *acc.entry(val).or_insert(0) += 1;
+        acc
+    });
 
-    a.iter()
-        .map(|val| val * b_freq.get(val).unwrap_or(&0))
-        .sum()
+    a.map(|val| val * b_freq.get(val).unwrap_or(&0)).sum()
 }
 
 #[cfg(test)]
@@ -43,7 +38,7 @@ mod tests {
     #[test]
     fn test_similarity_score() {
         assert_eq!(
-            similarity_score(Vec::from(TEST_DATA[0]), Vec::from(TEST_DATA[1])),
+            similarity_score(TEST_DATA[0].iter(), TEST_DATA[1].iter()),
             31
         );
     }
